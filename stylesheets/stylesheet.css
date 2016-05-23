@@ -218,3 +218,6 @@ a#forkme_banner {
     text-indent: -9000px;
     z-index: 3;
 }
+div.item_list{
+  display:block;width:240px;height:320px;border:solid 1px #ccc;margin:5px auto;
+}
