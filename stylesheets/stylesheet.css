@@ -221,3 +221,6 @@ a#forkme_banner {
 div.item_list{
   display:block;width:240px;height:320px;border:solid 1px #ccc;margin:5px auto;
 }
+.fa-weibo{
+  font-size: 120%;
+}
