@@ -5,7 +5,7 @@ $.get("./content/index.json",function(result){
         for(var i=0;i<items.length;i++){
             $("#div_item_list").append('<div class="col-md-3"><div class="item_list"><a href="'+items[i].url+'">'+
             '<div class="item_list_title">'+items[i].title+'</div>'+
-            '<div class="item_list_description">'+items[i].description+'</div></a>'+
+            '<div class="item_list_description"><h3>'+items[i].title+'</h3>'+items[i].description+'</div></a>'+
             '<div class="item_list_tag"><a href="#'+items[i].tag+'"><i class="fa fa-tag" aria-hidden="true"></i> Tag : '+items[i].tag+'</a></div>'+
             '</div></div>');
         }
