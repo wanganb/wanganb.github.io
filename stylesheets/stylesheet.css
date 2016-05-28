@@ -262,3 +262,11 @@ div.item_list{
   padding: 2px 10px;
   font-style: italic;
 }
+.web_introduce{
+  margin-top:0px;
+  margin-bottom: 15px;
+  font-size: 20px;
+  font-family: "\5FAE\8F6F\96C5\9ED1";
+  color: #159957;
+  text-align: center;
+}

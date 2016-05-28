@@ -3,19 +3,22 @@ $.get("./content/index.json",function(result){
     if(result.item_list){
         var items=result.item_list;
         for(var i=0;i<items.length;i++){
-            $("#div_item_list").append('<div class="col-md-3"><div class="item_list"><a href="'+items[i].url+'">'+
+            $("#div_item_list").append('<div class="col-md-3" data-tag="'+items[i].tag.toLowerCase()+'"><div class="item_list"><a href="'+items[i].url+'">'+
             '<div class="item_list_title">'+items[i].title+'</div>'+
             '<div class="item_list_description"><h3>'+items[i].title+'</h3>'+items[i].description+'</div></a>'+
-            '<div class="item_list_tag"><a href="#'+items[i].tag+'"><i class="fa fa-tag" aria-hidden="true"></i> Tag : '+items[i].tag+'</a></div>'+
+            '<div class="item_list_tag"><a href="#'+items[i].tag+'"><i class="fa fa-tag" aria-hidden="true"></i> Tag : '+items[i].tag+'</a> ; <a href="#All"><i class="fa fa-tag" aria-hidden="true"></i> Tag : All</a></div>'+
             '</div></div>');
         }
     }
+    AddFilter();
+    FormSearch();
 });
 var camera, scene, controls, renderer,boxmesh;//相机，场景，操作控制，渲染器
 var headerDom=document.getElementById("web_header");
-initThreeJS();
+InitThreeJS();
+
 //初始化
-function initThreeJS() {
+function InitThreeJS() {
     //camera
     camera = new THREE.PerspectiveCamera(45, headerDom.clientWidth / headerDom.clientHeight, 1, 1000);
     camera.position.z = 150;
@@ -64,7 +67,7 @@ function onWindowResize(){
     renderer.setSize( headerDom.clientWidth, headerDom.clientHeight );
 }
 //渲染
-function render() {
+function Render() {
     renderer.render(scene, camera);
 }
 
@@ -78,5 +81,36 @@ function animate() {
     if(boxmesh.position.x>headerDom.clientWidth/4){
         boxmesh.position.x=-headerDom.clientWidth/4;
     }
-    render();
+    Render();
+}
+//类型过滤
+function AddFilter(){
+    $('#menu_instance a,.item_list_tag a').click(function(){
+        var selectType=$(this).attr("href").replace("#","").toLowerCase();
+        if(selectType=='all'){
+            $('[data-tag]').show();// show all
+            return;
+        }
+        $('[data-tag]').hide();// hide all
+        var selectMatch='[data-tag="'+selectType+'"]';// example: [data-tag="javascript"]
+        $(selectMatch).show();
+    })
+}
+
+function FormSearch(){
+    $('#txt_search').bind('input propertychange',function (){ 
+        var txt_searchKey=$('#txt_search').val().toLowerCase();
+        if(txt_searchKey==""){
+            $('[data-tag]').show();
+        }else{
+            $('[data-tag]').each(function(){
+                $this=$(this);
+                if($this.text().toLowerCase().indexOf(txt_searchKey)>-1){
+                    $this.show()
+                }else{
+                    $this.hide();
+                }
+            });
+        }
+    });
 }
