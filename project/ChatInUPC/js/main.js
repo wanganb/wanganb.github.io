@@ -76,8 +76,8 @@ function init() {
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
     scene = new THREE.Scene();
     scene.fog = new THREE.Fog( 0xffffff, 0, 750 );
-    var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
-    light.position.set( 0.5, 1, 0.75 );
+    var light = new THREE.AmbientLight( 0xffffff ); //new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
+    //light.position.set( 0.5, 1, 0.75 );
     scene.add( light );
     controls = new THREE.PointerLockControls( camera );
     scene.add( controls.getObject() );
@@ -128,22 +128,32 @@ function init() {
     document.addEventListener( 'keyup', onKeyUp, false );
     raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
     // floor
-    geometry = new THREE.PlaneGeometry( 2000, 2000, 100, 100 );
+    geometry = new THREE.PlaneGeometry( 2000, 2000, 1, 1 );
     geometry.rotateX( - Math.PI / 2 );
-    for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
-        var vertex = geometry.vertices[ i ];
-        vertex.x += Math.random() * 20 - 10;
-        vertex.y += Math.random() * 2;
-        vertex.z += Math.random() * 20 - 10;
-    }
-    for ( var i = 0, l = geometry.faces.length; i < l; i ++ ) {
-        var face = geometry.faces[ i ];
-        face.vertexColors[ 0 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-        face.vertexColors[ 1 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-        face.vertexColors[ 2 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-    }
-    material = new THREE.MeshBasicMaterial( { vertexColors: THREE.VertexColors } );
+    // for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
+    //     var vertex = geometry.vertices[ i ];
+    //     vertex.x += Math.random() * 20 - 10;
+    //     vertex.y += Math.random() * 2;
+    //     vertex.z += Math.random() * 20 - 10;
+    // }
+    // for ( var i = 0, l = geometry.faces.length; i < l; i ++ ) {
+    //     var face = geometry.faces[ i ];
+    //     face.vertexColors[ 0 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+    //     face.vertexColors[ 1 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+    //     face.vertexColors[ 2 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+    // }
+    //material = new THREE.MeshBasicMaterial( { vertexColors: THREE.VertexColors } );
+    var textureLoader = new THREE.TextureLoader();
+    var groundTexture = textureLoader.load( 'assets/grasslight-small.jpg' );
+    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+    groundTexture.repeat.set( 80, 80 );
+    groundTexture.anisotropy = 16;
+    var material = new THREE.MeshPhongMaterial({
+		map: groundTexture
+		//side:THREE.DoubleSide
+	});
     mesh = new THREE.Mesh( geometry, material );
+
     scene.add( mesh );
     // // objects
     // geometry = new THREE.BoxGeometry( 20, 20, 20 );
@@ -185,6 +195,7 @@ function animate() {
         var intersections = raycaster.intersectObjects( objects );
         var isOnObject = intersections.length > 0;
         var time = performance.now();
+        //console.log(time/1000);
         var delta = ( time - prevTime ) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
@@ -201,6 +212,7 @@ function animate() {
         controls.getObject().translateY( velocity.y * delta );
         controls.getObject().translateZ( velocity.z * delta );
         if ( controls.getObject().position.y < 10 ) {
+            //console.log(controls.getObject().position.y);
             velocity.y = 0;
             controls.getObject().position.y = 10;
             canJump = true;
