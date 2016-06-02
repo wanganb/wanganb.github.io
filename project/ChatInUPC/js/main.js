@@ -4,6 +4,7 @@ var geometry, material, mesh;//几何要素，材质，实物
 var controls;//操控器
 var objects = [];//三维物体集
 var raycaster;//光线投射，射线
+var raycasterFBLR,directionFBLR=new THREE.Vector3();// 光线投射，前后左右进行碰撞检测 //临时方向向量directionFBLR
 var blocker = document.getElementById( 'blocker' );//屏幕锁dom
 var instructions = document.getElementById( 'instructions' );//操作简介
 
@@ -73,9 +74,9 @@ var canJump = false;
 var prevTime = performance.now();
 var velocity = new THREE.Vector3();
 function init() {
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 3000 );
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog( 0xffffff, 0, 750 );
+    //scene.fog = new THREE.Fog( 0xffffff, 0, 750 );
     var light = new THREE.AmbientLight( 0xffffff ); //new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
     //light.position.set( 0.5, 1, 0.75 );
     scene.add( light );
@@ -127,6 +128,7 @@ function init() {
     document.addEventListener( 'keydown', onKeyDown, false );
     document.addEventListener( 'keyup', onKeyUp, false );
     raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
+    raycasterFBLR=new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(), 0, 10 );//碰撞检测，初始化为[0,0,0]到[0,0,0]，最大检测距离为5
     // floor
     geometry = new THREE.PlaneGeometry( 2000, 2000, 1, 1 );
     geometry.rotateX( - Math.PI / 2 );
@@ -155,25 +157,35 @@ function init() {
     mesh = new THREE.Mesh( geometry, material );
 
     scene.add( mesh );
+    
+    var skyGeometry=new THREE.SphereGeometry( 1000, 32, 32,0,Math.PI * 2,0,Math.PI/1.8 );
+    var skyTexture = textureLoader.load( 'assets/sky.jpg' );
+    skyTexture.anisotropy = 16;
+    var skyMaterial = new THREE.MeshPhongMaterial({//MeshBasicMaterial
+		map: skyTexture,
+		side:THREE.BackSide
+	});
+    skyMesh = new THREE.Mesh( skyGeometry, skyMaterial );
+    scene.add(skyMesh);
     // // objects
-    // geometry = new THREE.BoxGeometry( 20, 20, 20 );
-    // for ( var i = 0, l = geometry.faces.length; i < l; i ++ ) {
-    //     var face = geometry.faces[ i ];
-    //     face.vertexColors[ 0 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-    //     face.vertexColors[ 1 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-    //     face.vertexColors[ 2 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-    // }
-    // for ( var i = 0; i < 500; i ++ ) {
-    //     material = new THREE.MeshPhongMaterial( { specular: 0xffffff, shading: THREE.FlatShading, vertexColors: THREE.VertexColors } );
-    //     var mesh = new THREE.Mesh( geometry, material );
-    //     mesh.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
-    //     mesh.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
-    //     mesh.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
-    //     scene.add( mesh );
-    //     material.color.setHSL( Math.random() * 0.2 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
-    //     objects.push( mesh );
-    // }
-    //
+    geometry = new THREE.BoxGeometry( 20, 20, 20 );
+    for ( var i = 0, l = geometry.faces.length; i < l; i ++ ) {
+        var face = geometry.faces[ i ];
+        face.vertexColors[ 0 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+        face.vertexColors[ 1 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+        face.vertexColors[ 2 ] = new THREE.Color().setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+    }
+    for ( var i = 0; i < 500; i ++ ) {
+        material = new THREE.MeshPhongMaterial( { specular: 0xffffff, shading: THREE.FlatShading, vertexColors: THREE.VertexColors } );
+        var mesh = new THREE.Mesh( geometry, material );
+        mesh.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
+        mesh.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
+        mesh.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
+        scene.add( mesh );
+        material.color.setHSL( Math.random() * 0.2 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+        objects.push( mesh );
+    }
+    
     renderer = new THREE.WebGLRenderer();
     renderer.setClearColor( 0xffffff );
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -190,20 +202,48 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame( animate );
     if ( controlsEnabled ) {
+        //正下方下方碰撞，地面、楼层等
         raycaster.ray.origin.copy( controls.getObject().position );
         raycaster.ray.origin.y -= 10;
         var intersections = raycaster.intersectObjects( objects );
         var isOnObject = intersections.length > 0;
+        //前后左右碰撞检测
+        raycasterFBLR.ray.origin.copy(controls.getObject().position);
+        raycasterFBLR.ray.origin.y-=7;//我们也以脚所在位置为准,高度超过3以上进行通过
+        controls.getDirection(directionFBLR);//为检测方向向量赋值
+        directionFBLR.y=0;//不检测垂直方向
+        directionFBLR.normalize();
+        //前面是否有物体
+        raycasterFBLR.ray.direction.copy(directionFBLR);
+        intersections=raycasterFBLR.intersectObjects( objects );
+        var frontNoObject=intersections.length < 1;
+        //后面是否有物体
+        raycasterFBLR.ray.direction.copy(directionFBLR.negate());
+        intersections=raycasterFBLR.intersectObjects( objects );
+        var backNoObject=intersections.length < 1;
+        //右边面是否有物体
+        var directionRightX=directionFBLR.z;
+        var directionRightZ=-directionFBLR.x;
+        directionFBLR.x=directionRightX;
+        directionFBLR.z=directionRightZ;
+        raycasterFBLR.ray.direction.copy(directionFBLR);
+        intersections=raycasterFBLR.intersectObjects( objects );
+        var rightNoObject=intersections.length < 1;
+        //左面是否有物体
+        raycasterFBLR.ray.direction.copy(directionFBLR.negate());
+        intersections=raycasterFBLR.intersectObjects( objects );
+        var leftNoObject=intersections.length < 1;
+        
         var time = performance.now();
         //console.log(time/1000);
         var delta = ( time - prevTime ) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
         velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-        if ( moveForward ) velocity.z -= 400.0 * delta;
-        if ( moveBackward ) velocity.z += 400.0 * delta;
-        if ( moveLeft ) velocity.x -= 400.0 * delta;
-        if ( moveRight ) velocity.x += 400.0 * delta;
+        if ( moveForward && frontNoObject ) velocity.z -= 400.0 * delta;
+        if ( moveBackward && backNoObject ) velocity.z += 400.0 * delta;
+        if ( moveLeft && leftNoObject) velocity.x -= 400.0 * delta;
+        if ( moveRight && rightNoObject) velocity.x += 400.0 * delta;
         if ( isOnObject === true ) {
             velocity.y = Math.max( 0, velocity.y );
             canJump = true;
