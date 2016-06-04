@@ -1,6 +1,6 @@
 {
     "item_list":[
-        {"title":"Chat in 3D School","description":"这是一个基于ThreeJS和Socket.IO的三维聊天游戏，游戏世界的底图原形为中国石油大学（华东）。","url":"project/ChatInUPC/","tag":"JavaScript"},
+        {"title":"Chat in 3D School","description":"这是一个基于ThreeJS和Socket.IO的三维聊天游戏，游戏世界的底图原形为中国石油大学（华东）。","url":"ChatInUPC/","tag":"JavaScript"},
         {"title":"Get Google Map Tiles using Python","description":"","url":"#","tag":"Python"},
         {"title":"Draw Cloud Points using OSG","description":"","url":"#","tag":"C++"},
         {"title":"3D Map Engine based on Three.JS","description":"","url":"#","tag":"JavaScript"}
